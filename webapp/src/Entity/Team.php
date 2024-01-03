@@ -87,7 +87,7 @@ class Team extends BaseApiEntity implements ExternalRelationshipEntityInterface,
     private ?string $publicDescription = null;
 
     #[ORM\Column(nullable: true, options: ['comment' => 'Physical location of team'])]
-    #[Serializer\Exclude]
+    #[Serializer\Groups([ARC::GROUP_NONSTRICT])]
     private ?string $room = null;
 
     #[ORM\Column(
