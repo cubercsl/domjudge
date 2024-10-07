@@ -1,0 +1,95 @@
+{% if team is empty %}
+    <div class="alert alert-danger mt-4">
+        No team found by this id.
+    </div>
+{% else %}
+    {% set rowSpan = 1 %}
+    {% set tdExtraClass = '' %}
+
+    {% if submissions is empty %}
+        <div class="alert alert-warning">No submissions</div>
+    {% else %}
+
+        <table class="data-table table table-hover table-striped table-sm submissions-table">
+            <thead class="thead-light">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">time</th>
+                <th scope="col" colspan="2">team</th>
+                <th scope="col">problem</th>
+                <th scope="col">lang</th>
+                <th scope="col">result</th>
+            </tr>
+            </thead>
+            <tbody>
+            {%- for submission in submissions %}
+
+                {%- if submission.submittime <= submission.contest.endtime %}
+                    {%- if submission.judgings.first is empty or submission.judgings.first.result is empty %}
+                        {%- set isPending = true %}
+                    {%- elseif verificationRequired and not submission.judgings.first.verified %}
+                        {%- set isPending = true %}
+                    {%- elseif submission.contest.freezeData.showFrozen and submission.submittime >= submission.contest.freezetime %}
+                        {%- set isPending = true %}
+                    {%- else %}
+                        {%- set isPending = false %}
+                    {%- endif %}
+
+                    {%- if showPending or not isPending %}
+                        {% if submission.team.affiliation %}
+                            {% set affilid = submission.team.affiliation.affilid %}
+                        {% else %}
+                            {% set affilid = '' %}
+                        {% endif %}
+
+                        <tr class="{% if not submission.valid %}ignore{% endif %}"
+                            data-problem-id="{{ submission.problem.probid }}"
+                            data-team-id="{{ submission.team.teamid }}"
+                            data-category-id="{{ submission.team.category.categoryid }}"
+                            data-affiliation-id="{{ affilid }}"
+                            data-language-id="{{ submission.language.langid }}"
+                            data-submission-id="{{ submission.submitid }}"
+                            data-result="{{ submission.judgings.first.result == 'correct' ? 'correct' : 'incorrect' }}">
+                            <td class="{{ tdExtraClass }}">
+                                <a>
+                                s{{ submission.submitid }}
+                                </a>
+                            </td>
+                            <td rowspan="{{ rowSpan }}" class="{{ tdExtraClass }}">
+                                <a>{{ submission.submittime | printtime(null, submission.contest) }}</a>
+                            </td>
+                            <td rowspan="{{ rowSpan }}" class="{{ tdExtraClass }}" style="text-align: right;">
+                                <a>
+                                    {{ submission.team | entityIdBadge('t') }}
+                                </a>
+                            </td>
+                            <td rowspan="{{ rowSpan }}" class="{{ tdExtraClass }}">
+                                <a>
+                                    {{ submission.team.effectiveName | u.truncate(teamname_max_length, '…') }}
+                                </a>
+                            </td>
+                            <td class="probid{{ tdExtraClass }}" rowspan="{{ rowSpan }}">
+                                <a
+                                title="{{ submission.problem.name }}">{{ submission.contestProblem | problemBadge }}</a>
+                            </td>
+                            <td class="langid{{ tdExtraClass }}" rowspan="{{ rowSpan }}">
+                                <a
+                                title="{{ submission.language.name }}">{{ submission.language | entityIdBadge }}</a>
+                            </td>
+                            <td rawspan="{{ rowSpan }}">
+                                {%- if isPending %}
+                                    {{- '' | printResult -}}
+                                {%- elseif submission.judgings.first.result == 'compiler-error' %}
+                                    {{- 'compiler-error' | printResult -}}
+                                {%- else %}
+                                    {{- (submission.judgings.first.result == 'correct' ? 'correct' : 'incorrect') | printResult -}}
+                                {%- endif %}
+                            </td>
+                        </tr>
+                    {%- endif %}
+                {%- endif %}
+            {%- endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endif %}

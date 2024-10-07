@@ -1,0 +1,9 @@
+{% extends "team/base.html.twig" %}
+
+{% block title %} Submissions - {{ parent() }}{% endblock %}
+
+{% block content %}
+<h1 class="mt-3">Submissions</h1>
+
+{%- include 'partials/submission_list.html.twig' with {showTestcases: false} %}
+{% endblock %}

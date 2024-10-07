@@ -1,0 +1,14 @@
+{% extends "partials/modal.html.twig" %}
+
+{% block title %}
+    Submissions
+    {% if restrictionText %}
+    <small class="text-muted">
+        restricted to {{ restrictionText }} (<a href="{{ path('public_team_submissions', {'teamId': team.teamid}) }}">show all</a>)
+    </small>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+{%- include 'partials/submission_list.html.twig' with {showTestcases: false} %}
+{% endblock %}

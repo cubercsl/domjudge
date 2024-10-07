@@ -3,15 +3,18 @@
 namespace App\Controller\Team;
 
 use App\Controller\BaseController;
+use App\DataTransferObject\SubmissionRestriction;
 use App\Entity\Team;
 use App\Service\ConfigurationService;
 use App\Service\DOMJudgeService;
 use App\Service\EventLogService;
 use App\Service\ScoreboardService;
+use App\Service\SubmissionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Attribute\Route;
@@ -84,5 +87,58 @@ class ScoreboardController extends BaseController
         }
 
         return $this->render('team/team.html.twig', $data);
+    }
+
+    #[Route(path: '/team/{teamId<\d+>}/submissions', name: 'team_team_submissions')]
+    public function teamSubmissionAction(
+        Request $request,
+        int $teamId,
+        SubmissionService $submissionService,
+        #[MapQueryParameter]
+        ?int $cid = null
+    ): Response
+    {
+        if (!$this->config->get('enable_ranking')) {
+            throw new BadRequestHttpException('Scoreboard is not available.');
+        }
+
+        $team = $this->em->getRepository(Team::class)->find($teamId);
+        if ($team && $team->getCategory() && !$team->getCategory()->getVisible() && $teamId !== $this->dj->getUser()->getTeamId()) {
+            $team = null;
+        }
+
+        $data = [
+            'team' => $team,
+            'showPending' => $this->config->get('show_pending'),
+            'verificationRequired' => $this->config->get('verification_required')
+        ];
+        $restrictions = new SubmissionRestriction();
+        $restrictionText = '';
+
+        if ($request->query->has('restrict')) {
+            $restrictionsFromQuery = $request->query->all('restrict');
+            $restrictionTexts = [];
+            foreach ($restrictionsFromQuery as $key => $value) {
+                $restrictionKeyText = match ($key) {
+                    'problemId' => 'problem',
+                    default => throw new BadRequestHttpException(sprintf('Restriction on %s not allowed.', $key)),
+                };
+                $restrictions->$key = is_numeric($value) ? (int)$value : $value;
+                $restrictionTexts[] = sprintf('%s %s', $restrictionKeyText, $value);
+            }
+            $restrictionText = implode(', ', $restrictionTexts);
+        }
+        $restrictions->teamId = $teamId;
+        [$submissions, $submissionCount] =
+            $submissionService->getSubmissionList($this->dj->getCurrentContests(honorCookie: true), $restrictions);
+
+        $data['restrictionText']    = $restrictionText;
+        $data['submissions']        = $submissions;
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->render('team/team_submissions_modal.html.twig', $data);
+        }
+
+        return $this->render('team/team_submissions.html.twig', $data);
     }
 }

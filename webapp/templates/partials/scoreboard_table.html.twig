@@ -285,14 +285,24 @@
                     {% endif %}
 
                     {% set link = null %}
-                    {% if jury %}
-                        {% set restrict = {problemId: problem.probid} %}
-                        {% set link = path('jury_team', {teamId: score.team.teamid, restrict: restrict}) %}
+                    {% if not static %}
+                        {% if jury %}
+                            {% set restrict = {problemId: problem.probid} %}
+                            {% set link = path('jury_team', {teamId: score.team.teamid, restrict: restrict}) %}
+                        {% elseif public %}
+                            {% set restrict = {problemId: problem.probid} %}
+                            {% set link = path('public_team_submissions', {teamId: score.team.teamid, restrict: restrict}) %}
+                            {% set extra = 'data-ajax-modal' %}
+                        {% else %}
+                            {% set restrict = {problemId: problem.probid} %}
+                            {% set link = path('team_team_submissions', {teamId: score.team.teamid, restrict: restrict}) %}
+                            {% set extra = 'data-ajax-modal' %}
+                        {% endif %}
                     {% endif %}
 
                     <td class="score_cell">
                         {% if numSubmissions != '0' %}
-                            <a {% if link %}href="{{ link }}"{% endif %}>
+                            <a {% if extra is not null %}{{ extra | raw }}{% endif %} {% if link %}href="{{ link }}"{% endif %}>
                                 <div class="{{ scoreCssClass }}">
                                     {% if matrixItem.isCorrect %}{{ time }}{% else %}&nbsp;{% endif %}
                                     <span>
