@@ -110,6 +110,7 @@ class ScoreboardController extends BaseController
         $data = [
             'team' => $team,
             'showPending' => $this->config->get('show_pending'),
+            'compilePenalty' => $this->config->get('compile_penalty'),
             'verificationRequired' => $this->config->get('verification_required')
         ];
         $restrictions = new SubmissionRestriction();

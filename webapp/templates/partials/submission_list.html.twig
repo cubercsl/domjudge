@@ -29,7 +29,7 @@
                         {%- set isPending = true %}
                     {%- elseif verificationRequired and not submission.judgings.first.verified %}
                         {%- set isPending = true %}
-                    {%- elseif submission.contest.freezeData.showFrozen and submission.submittime >= submission.contest.freezetime %}
+                    {%- elseif submission.contest.freezeData.showFrozen and submission.isAfterFreeze %}
                         {%- set isPending = true %}
                     {%- else %}
                         {%- set isPending = false %}
@@ -79,7 +79,7 @@
                             <td rawspan="{{ rowSpan }}">
                                 {%- if isPending %}
                                     {{- '' | printResult -}}
-                                {%- elseif submission.judgings.first.result == 'compiler-error' %}
+                                {%- elseif not compilePenalty and submission.judgings.first.result == 'compiler-error' %}
                                     {{- 'compiler-error' | printResult -}}
                                 {%- else %}
                                     {{- (submission.judgings.first.result == 'correct' ? 'correct' : 'incorrect') | printResult -}}
